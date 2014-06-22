@@ -12,6 +12,10 @@
  *					  completed
  *					- invalidFeedItem. This is emitted when the number of parts or fname
  *					  or lname is not found
+ *
+ * fs.readLine is not used to read the file line by line because it
+ * skips the last line if it is not terminated by a new line character.
+ *
  */
 
 var List = require('./List.js');
@@ -29,7 +33,7 @@ function FeedFileProcessor(file, delimiter) {
 	}
 	this.fileObjectList = new List();
 	this.nameList = new List();
-	console.log('-----------------HandleFeedFile--------------');
+	//console.log('-----------------HandleFeedFile--------------');
 }
 
 //Inherit the EventEmitter Class so that this class could trigger events
@@ -57,7 +61,7 @@ FeedFileProcessor.prototype.processFile = function() {
  * before adding it to the object list.
  */
 function handleContent(line, self) {
-	//console.log('line ', line);
+	//console.log('FeedFileProcessor : About to process line ', line);
 	var parts = line.split(self.delimiter);
 	//console.log('parts.length ', parts.length, parts);
 	if (parts.length != 5) {
@@ -96,10 +100,10 @@ function FeedContent(fname, lname, age, email) {
  * Emits 'completedProcess' event with file name and list of processed objects
  */
 function completedProcess(self) {
-	console.log('completedProcess called');
+	//console.log('completedProcess called');
 	self.emit('completedProcess', self.file, self.fileObjectList.getAll());
-	console.log("Finished processing ", self.file);
-	console.log("Contents are ", self.fileObjectList.getAll());
+	console.log("FeedFileProcessor : Finished processing ", self.file);
+	//console.log("Contents are ", self.fileObjectList.getAll());
 
 }
 

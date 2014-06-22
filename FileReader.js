@@ -1,4 +1,7 @@
 /**
+ * fs.readLine is not used to read the file line by line because it
+ * skips the last line if it is not terminated by a new line character.
+ *
  * This class will read a file and emit event for every line of the file.
  * This will read a block of file based on the required buffer size and
  * will split at new line ('\n'). When there are partial lines read into
@@ -45,7 +48,7 @@ function linesOccured(evFileName, lines) {
  * 'eof' event is emiited.
  */
 FileReader.prototype.readFile = function(bufferSize) {
-	console.log(this.fileName);
+	console.log('FileReader : About to read ', this.fileName);
 	var buf = new Buffer(bufferSize);
 	var fd = fs.openSync(this.fileName, 'r');
 	var offset = 0;
@@ -68,14 +71,14 @@ FileReader.prototype.readFile = function(bufferSize) {
 			this.emit('linesOccur', this.fileName, lines);
 		} else if (lines.length == 0) {
 			//skip
-			console.log("lines is 0");
+			console.log("FileReader : lines is 0");
 		} else {
 			previousReadLastChunk = lines[lines.length-1];
 			//console.log('partial lines', lines.slice(0, (lines.length - 1)), '\n');
 			this.emit('linesOccur', this.fileName, lines.slice(0, (lines.length - 1)));
 		}
 	}
-	console.log(">>>>>>>>>>>>>>>>Emitted EOF>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+	console.log("FileReader : >>>>>>>>>>>>>>>>Emitted EOF>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 	this.emit('eof', this.fileName);
 };
 
@@ -91,7 +94,10 @@ function emitEachLine(self, fileName, lines) {
 /**
  * This is a bit annoying. We have to remove the listeners after completion else
  * this keeps alive and gets triggered for events when a new object of this class
- * is created. Refer example of the problem in FeedFileProcessor.js
+ * is created. Refer example of the problem in FeedFileProcessor.js.
+ * Duplicate event listeners is also the reason why fs.readSync is used rather than
+ * the async read. The data gets corrupted when multiple files are opened for reading
+ * at the same time.
  */
 FileReader.prototype.cleanUp = function() {
 	this.removeAllListeners('linesOccur');

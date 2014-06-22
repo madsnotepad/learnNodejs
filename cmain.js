@@ -10,14 +10,15 @@ var RestClient = require('./RestClient.js');
 var List = require('./List.js');
 
 //Usage validation
-if(process.argv.length != 4) {
-	console.log('Usage node main.js <pathToProcess> <delimiter>');
+if(process.argv.length != 5) {
+	console.log('Usage node main.js <pathToProcess> <delimiter>  <feedFileExtn>');
 	process.abort();
 }
 
 //Initialize the path and feed file delimiter
 var pathToProcess = process.argv[2];
 var feedDelimiter = process.argv[3];
+var feedFileExtn = process.argv[4];
 
 var cumObjList = new List();
 var fileList = new List();
@@ -33,14 +34,34 @@ function processDirectory() {
 //Iterate files and handle each file
 function iteratateFileNHandleFile(err, files) {
 	if(err) {
-		console.log(err);
+		console.log('Error occured during file scan. Error is ', err);
 		process.abort();
 	}
-	numberOfFiles = files.length;
-	console.log(files.length);
-	for(var i = 0; i < files.length; i++) {
-		handleFile(files[i]);
+	var filteredFiles = filterToProcess(files);
+	numberOfFiles = filteredFiles.length;
+	//console.log(files.length);
+	for(var i = 0; i < filteredFiles.length; i++) {
+		handleFile(filteredFiles[i]);
 	}
+}
+
+//this is done to get the number of files to process. Number of files is required to identify
+//if all files have been processed
+function filterToProcess(files) {
+	var newFiles = [];
+	for(var i = 0; i < files.length; i++) {
+		var fileExtn = getFileExtension(files[i]);
+		if (fileExtn) {
+			if (fileExtn == feedFileExtn) {
+				newFiles.push(files[i]);
+			} else {
+				console.log('cmain : ----Skipping file since extension does not match. File name - ', files[i]);
+			}
+		} else {
+			console.log('cmain : ----Skipping file since extension does not match. File name - ', files[i]);
+		}
+	}
+	return newFiles;
 }
 
 /**
@@ -51,9 +72,10 @@ function iteratateFileNHandleFile(err, files) {
  */
 
 function handleFile(fileName) {
-	console.log(fileName);
+	console.log('cmain : About to process ', fileName);
 	var hFeedFile = new CumulativeFeedFileProcessor(pathToProcess.concat('\\').concat(fileName), feedDelimiter, cumObjList);
 	hFeedFile.on("completedProcess", updateObjectList);
+	hFeedFile.on('invalidFeedItem', logInvalidItem);
 	hFeedFile.processFile();
 	hFeedFile.cleanUp();
 }
@@ -61,12 +83,12 @@ function handleFile(fileName) {
 //Add to the previous completed list.
 function updateObjectList(file, objList) {
 	cumObjList.addAllUnique(objList);
-	console.log('before fileList ', fileList);
+	//console.log('before fileList ', fileList);
 	fileList.add(file);
-	console.log('after fileList ', fileList);
-	console.log(numberOfFiles, ' ', fileList.getAll().length);
+	//console.log('after fileList ', fileList);
+	//console.log(numberOfFiles, ' ', fileList.getAll().length);
 	if(numberOfFiles == fileList.getAll().length) {
-		console.log('post values');
+		//console.log('post values');
 		postValues(cumObjList);
 	}
 }
@@ -74,24 +96,30 @@ function updateObjectList(file, objList) {
 //Callback method of 'completedProcess' event. This will make a POST request to
 //REST API. We may have to implement pagination if the data is going to be large.
 function postValues(objList) {
-	console.log('post called');
 	var rc = new RestClient('localhost', '/index.html', 'GET');
 	rc.postRequest(JSON.stringify(objList), handleResponse);
-	console.log('Submitted request');
+	console.log('cmain : Submitted POST request. Request is ', objList);
 }
 
 //Callback method of REST API response
 function handleResponse(response) {
-	console.log('---------response---------------');
+	console.log('cmain : ---------Received response---------------');
 	response.setEncoding('utf8');
 	response.on('data', function (chunk) {
-	    console.log('=========BODY========: ' + chunk);
+	    console.log('cmain : =========BODY========: ' + chunk);
   	});
     response.on("end", function () {
-        console.log('end');
+        console.log('cmain : Response end');
     });
 };
 
+function logInvalidItem(fileName, line) {
+	console.log('main : Detected invalid line item in ', fileName, ' item is - ', line);
+}
+
+function getFileExtension(fileName) {
+	return fileName.substr(fileName.lastIndexOf('.') + 1);
+}
 
 //Start the process
 processDirectory();

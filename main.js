@@ -33,17 +33,17 @@ function iteratateFileNHandleFile(err, files) {
 		console.log('Error occured during file scan. Error is ', err);
 		process.abort();
 	}
-	console.log(files.length);
+	//console.log(files.length);
 	for(var i = 0; i < files.length; i++) {
 		var fileExtn = getFileExtension(files[i]);
 		if (fileExtn) {
 			if (fileExtn == feedFileExtn) {
 				handleFile(files[i]);
 			} else {
-				console.log('----Skipping file since extension does not match. File name - ', files[i]);
+				console.log('main : ----Skipping file since extension does not match. File name - ', files[i]);
 			}
 		} else {
-				console.log('----Skipping file since extension does not match. File name - ', files[i]);
+			console.log('main : ----Skipping file since extension does not match. File name - ', files[i]);
 		}
 	}
 }
@@ -53,7 +53,7 @@ function iteratateFileNHandleFile(err, files) {
  * request to the REST API
  */
 function handleFile(fileName) {
-	console.log(fileName);
+	console.log('main : About to process ', fileName);
 	var hFeedFile = new FeedFileProcessor(pathToProcess.concat('\\').concat(fileName), feedDelimiter);
 	hFeedFile.on('completedProcess', postValues);
 	hFeedFile.on('invalidFeedItem', logInvalidItem);
@@ -66,23 +66,23 @@ function handleFile(fileName) {
 function postValues(file, objList) {
 	var rc = new RestClient('localhost', '/index.html');
 	rc.postRequest(JSON.stringify(objList), handleResponse);
-	console.log('Submitted request for ' + file);
+	console.log('main : Submitted POST request for ' + file, ' request submitted is ', objList);
 }
 
 //Callback method of REST API response
 function handleResponse(response) {
-	console.log('---------response---------------');
+	console.log('main : ---------Received response---------------');
 	response.setEncoding('utf8');
 	response.on('data', function (chunk) {
-	    console.log('=========BODY========: ' + chunk);
+	    console.log('main : =========BODY========: ' + chunk);
   	});
     response.on("end", function () {
-        console.log('end');
+        console.log('main : Response end');
     });
 };
 
 function logInvalidItem(fileName, line) {
-	console.log('Detected invalid line item in ', fileName, ' item is - ', line);
+	console.log('main : Detected invalid line item in ', fileName, ' item is - ', line);
 }
 
 function getFileExtension(fileName) {
