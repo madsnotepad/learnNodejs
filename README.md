@@ -23,6 +23,8 @@ node HttpServer
 - Start the HttpServer
 - node cmain.js <Directory Containing the feed files> <delimiter> <feed file extn>
 
+<b>Test feed files</b>
+Sample test feed files are available in "testFeeds" directory
 
 Following are the files created to acheive the functionality
 
