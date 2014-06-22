@@ -1,12 +1,21 @@
+/**
+ * The wrapper script to perform the functionality of scanning a directory
+ * for feed files and processing them together. This script will POST the data after
+ * all the files are processed. To process files individually to eliminate duplicated
+ * items and making the POST refer main.js.
+ */
 var fs = require('fs');
 var CumulativeFeedFileProcessor = require('./CumulativeFeedFileProcessor.js');
 var RestClient = require('./RestClient.js');
 var List = require('./List.js');
 
+//Usage validation
 if(process.argv.length != 4) {
 	console.log('Usage node main.js <pathToProcess> <delimiter>');
 	process.abort();
 }
+
+//Initialize the path and feed file delimiter
 var pathToProcess = process.argv[2];
 var feedDelimiter = process.argv[3];
 
@@ -14,12 +23,14 @@ var cumObjList = new List();
 var fileList = new List();
 var numberOfFiles = 0;
 
+//scan the directory, iterate and process the feed files
 function processDirectory() {
 	fs.readdir(pathToProcess, function(err, files) {
 		iteratateFileNHandleFile(err, files);
 	});
 }
 
+//Iterate files and handle each file
 function iteratateFileNHandleFile(err, files) {
 	if(err) {
 		console.log(err);
@@ -32,22 +43,22 @@ function iteratateFileNHandleFile(err, files) {
 	}
 }
 
+/**
+ * Handle the file using CumulativeFeedFileProcessor. Register for 'completedProcess' event to accumulate
+ * the object list from the previous file process. updateObjectList is called to accumulate the object list
+ * Note : the objectList contains only unique values as populated by the Feed file processor. The accumulated
+ * object list is passed each time to the processor for it maintain unique values.
+ */
+
 function handleFile(fileName) {
 	console.log(fileName);
 	var hFeedFile = new CumulativeFeedFileProcessor(pathToProcess.concat('\\').concat(fileName), feedDelimiter, cumObjList);
 	hFeedFile.on("completedProcess", updateObjectList);
 	hFeedFile.processFile();
-	hFeedFile.close();
+	hFeedFile.cleanUp();
 }
 
-function printValues(file, objList) {
-	console.log(file);
-	console.log("obj", objList);
-	for(var i = 0; i < objList.length; i++) {
-		console.log("obj " + objList[i]);
-	}
-}
-
+//Add to the previous completed list.
 function updateObjectList(file, objList) {
 	cumObjList.addAllUnique(objList);
 	console.log('before fileList ', fileList);
@@ -60,6 +71,8 @@ function updateObjectList(file, objList) {
 	}
 }
 
+//Callback method of 'completedProcess' event. This will make a POST request to
+//REST API. We may have to implement pagination if the data is going to be large.
 function postValues(objList) {
 	console.log('post called');
 	var rc = new RestClient('localhost', '/index.html', 'GET');
@@ -67,6 +80,7 @@ function postValues(objList) {
 	console.log('Submitted request');
 }
 
+//Callback method of REST API response
 function handleResponse(response) {
 	console.log('---------response---------------');
 	response.setEncoding('utf8');
@@ -79,9 +93,5 @@ function handleResponse(response) {
 };
 
 
-
-console.log(pathToProcess);
-
+//Start the process
 processDirectory();
-
-//handleFile('test');

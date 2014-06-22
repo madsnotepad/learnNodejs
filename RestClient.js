@@ -1,18 +1,22 @@
+/**
+ * This is a helper class for making REST API calls.
+ * Supports POST and GET method. Callbacks to handle response
+ * are with the caller of this class.
+ */
+
+
 var http = require('http');
 
-var RestClient = function(hostname, path, methodType) {
+//Constructor
+var RestClient = function(hostname, path) {
 	this.hostname = hostname;
 	this.path = path;
-	this.methodType = methodType;
 }
 
-/*
-var options = {
-	hostname: 'google.co.in',
-	path: '/index.html'
-};
-*/
-
+/**
+ * POST method. Takes the data to POST and response callback
+ * method to be called.
+ */
 RestClient.prototype.postRequest = function(data, callback) {
 	var options = {
 		hostname: this.hostname,
@@ -22,10 +26,13 @@ RestClient.prototype.postRequest = function(data, callback) {
 	var requestHandle = http.request(options, function(res) {
 		console.log("post request is submitted");
 		callback(res);});
-	console.log("DATA******************* ", data);
 	requestHandle.write(data);
 	requestHandle.end();
 }
+
+/**
+ * GET method. Takes the response callback method to be called.
+ */
 
 RestClient.prototype.getRequest = function(callback) {
 	var options = {
@@ -39,7 +46,7 @@ RestClient.prototype.getRequest = function(callback) {
 	requestHandle.end();
 }
 
-
+//Exports the functionality so that it could be imported as a module in another js script
 module.exports = RestClient;
 
 

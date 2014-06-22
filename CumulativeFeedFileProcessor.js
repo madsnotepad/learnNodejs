@@ -1,6 +1,13 @@
-var HandleFeedFile = require('./FeedFileProcessor.js');
+/**
+ * This is a sub class of FeedFileProcessor to handle if the requirement is to
+ * process all the files and remove duplicates before making the RESTful service
+ * call.
+ */
+var FeedFileProcessor = require('./FeedFileProcessor.js');
 
-var CumulativeHandleFeedFile = function(file, delimiter, previousFileList) {
+//Takes an additional parameter previousFileList that contains object from the previous
+//feeds processor. fileObjectList is initialized with this list.
+var CumulativeFeedFileProcessor = function(file, delimiter, previousFileList) {
 	console.log('-------------CumulativeHandleFeedFile constructor-------------', previousFileList);
 	this.file = file;
 	if (!delimiter) {
@@ -15,8 +22,8 @@ var CumulativeHandleFeedFile = function(file, delimiter, previousFileList) {
 	}
 }
 
+//Inherit the EventEmitter Class so that this class could trigger events
+CumulativeFeedFileProcessor.prototype = new FeedFileProcessor();
 
-CumulativeHandleFeedFile.prototype = new HandleFeedFile();
-
-
-module.exports = CumulativeHandleFeedFile;
+//Exports the functionality so that it could be imported as a module in another js script
+module.exports = CumulativeFeedFileProcessor;

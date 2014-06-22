@@ -1,3 +1,8 @@
+/**
+ * This is a helper class around an array, with methods to add
+ * element, check existence of an element, etc.
+ */
+
 var List = function() {
 	this.list = [];
 }
