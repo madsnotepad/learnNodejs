@@ -52,7 +52,6 @@ FileReader.prototype.readFile = function(bufferSize) {
 	var pointer = 0;
 	var bytesRead = 1;
 	var previousReadLastChunk = '';
-
 	while (bytesRead > 0) {
 		bytesRead = fs.readSync(fd, buf, offset, bufferSize, pointer);
 		pointer = pointer + bytesRead;

@@ -10,14 +10,15 @@ var FeedFileProcessor = require('./FeedFileProcessor.js');
 var RestClient = require('./RestClient.js');
 
 //Usage validation
-if(process.argv.length != 4) {
-	console.log('Usage node main.js <pathToProcess> <delimiter>');
+if(process.argv.length != 5) {
+	console.log('Usage node main.js <pathToProcess> <delimiter> <feedFileExtn>');
 	process.abort();
 }
 
 //Initialize the path and feed file delimiter
 var pathToProcess = process.argv[2];
 var feedDelimiter = process.argv[3];
+var feedFileExtn = process.argv[4];
 
 //scan the directory, iterate and process the feed file one by one
 function processDirectory() {
@@ -29,12 +30,21 @@ function processDirectory() {
 //Iterate files and handle each file
 function iteratateFileNHandleFile(err, files) {
 	if(err) {
-		console.log(err);
+		console.log('Error occured during file scan. Error is ', err);
 		process.abort();
 	}
 	console.log(files.length);
 	for(var i = 0; i < files.length; i++) {
-		handleFile(files[i]);
+		var fileExtn = getFileExtension(files[i]);
+		if (fileExtn) {
+			if (fileExtn == feedFileExtn) {
+				handleFile(files[i]);
+			} else {
+				console.log('----Skipping file since extension does not match. File name - ', files[i]);
+			}
+		} else {
+				console.log('----Skipping file since extension does not match. File name - ', files[i]);
+		}
 	}
 }
 
@@ -46,6 +56,7 @@ function handleFile(fileName) {
 	console.log(fileName);
 	var hFeedFile = new FeedFileProcessor(pathToProcess.concat('\\').concat(fileName), feedDelimiter);
 	hFeedFile.on('completedProcess', postValues);
+	hFeedFile.on('invalidFeedItem', logInvalidItem);
 	hFeedFile.processFile();
 	hFeedFile.cleanUp();
 }
@@ -69,6 +80,14 @@ function handleResponse(response) {
         console.log('end');
     });
 };
+
+function logInvalidItem(fileName, line) {
+	console.log('Detected invalid line item in ', fileName, ' item is - ', line);
+}
+
+function getFileExtension(fileName) {
+	return fileName.substr(fileName.lastIndexOf('.') + 1);
+}
 
 //Start the process
 processDirectory();

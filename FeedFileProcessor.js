@@ -10,11 +10,12 @@
  * Events Listened 	- FileReader.line, FileReader.eof
  * Events Emitted 	- completedProcess. This denotes the processing of the file has been
  *					  completed
+ *					- invalidFeedItem. This is emitted when the number of parts or fname
+ *					  or lname is not found
  */
 
 var List = require('./List.js');
 var FileReader = require('./FileReader.js');
-var fs = require('fs');
 var events = require('events');
 var fileReader = null;
 
@@ -58,6 +59,11 @@ FeedFileProcessor.prototype.processFile = function() {
 function handleContent(line, self) {
 	//console.log('line ', line);
 	var parts = line.split(self.delimiter);
+	//console.log('parts.length ', parts.length, parts);
+	if (parts.length != 5) {
+		self.emit('invalidFeedItem', self.file, line);
+		return;
+	}
 	var fname = parts[0];
 	var lname = parts[1];
 	var age = parts[2];
@@ -68,6 +74,9 @@ function handleContent(line, self) {
 			self.fileObjectList.add(JSON.stringify(feedContent));
 			self.nameList.add(fname.concat(lname));
 		}
+	} else {
+		self.emit('invalidFeedItem', self.file, line);
+		return;
 	}
 }
 
